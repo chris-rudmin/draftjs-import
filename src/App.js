@@ -123,6 +123,13 @@ export default class App extends React.Component {
     }));
   }
 
+  getPlainText() {
+    this.setState((state) => ({
+      ...state,
+      editorState: state.editorState.getCurrentContent().getPlainText()
+    }))
+  }
+
   render() {
     const { editorState } = this.state;
 
@@ -166,6 +173,7 @@ export default class App extends React.Component {
         <textarea type="text" onChange={this.handleChange.bind(this)} rows={10} defaultValue={testString} />
         <button onClick={this.purifyHtml.bind(this)}>Sanitize HTML</button>
         <button onClick={this.importHtml.bind(this)}>Import HTML</button>
+        <button onClick={this.getPlainText.bind(this)}>Get Plain Text</button>
       </>
     );
   }
