@@ -9,13 +9,39 @@ import {
   ContentState
 } from "draft-js";
 import "./styles.css";
+import 'draft-js/dist/Draft.css';
+import DOMPurify from 'dompurify'
+
+
+const testString = `
+  <p>😃</p>
+  <p><a href="https://www.thehotline.org/get-help/">National Domestic Violence Hotline</a>: 1-800-799-SAFE (7233); for TTY: 1-800-787-3224</p><p>Text “START” to 88788</p>
+  <p><a href="https://suicidepreventionlifeline.org/talk-to-someone-now/">National Suicide Prevention Lifeline</a>: 1-800-273-8255</p>
+  <p>Nacional de Prevención del Suicidio: 1-888-628-9454</p><p>For TTY Users: Use your preferred relay service or dial 711 then 1-800-273-8255.</p>
+  <p><br></p>
+  <p>Source materials for this episode cannot be listed here due to character limitations. For a full list of sources, please visit <a href="https://crimejunkiepodcast.com/mysterious-death-ellen-greenberg/">https://crimejunkiepodcast.com/mysterious-death-ellen-greenberg/</a></p>
+  <p><br></p>
+  <p>Learn more about your ad choices. Visit <a href="https://podcastchoices.com/adchoices">podcastchoices.com/adchoices</a></p>
+  <ul><li>one</li><li>two</li></ul>
+  <ol><li>one</li><li>two</li></ol>
+  <b>dangling tag
+  <div>what</div>
+  No Tag
+  <img src=x onerror=alert(1)//>
+  <svg><g/onload=alert(2)//<p>
+  <p>abc<iframe//src=jAva&Tab;script:alert(3)>def</p>
+  <math><mi//xlink:href="data:x,<script>alert(4)</script>">
+  <TABLE><tr><td>HELLO</tr></TABL>
+  <UL><li><A HREF=//google.com>click</UL>
+`
+
 
 export default class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
       editorState: EditorState.createEmpty(),
-      inputValue: ""
+      inputValue: testString,
     };
 
     this.focus = () => this.refs.editor.focus();
@@ -66,6 +92,12 @@ export default class App extends React.Component {
     this.setState((state) => ({ ...state, inputValue: e.target.value }));
   }
 
+  purifyHtml() {
+    this.setState((state) => ({
+      ...state, inputValue: DOMPurify.sanitize(state.inputValue)
+    }))
+  }
+
   importHtml() {
     const decorator = new CompositeDecorator([
       {
@@ -77,6 +109,7 @@ export default class App extends React.Component {
         component: Image
       }
     ]);
+
 
     const blocksFromHTML = convertFromHTML(this.state.inputValue);
     const blockState = ContentState.createFromBlockArray(
@@ -125,10 +158,13 @@ export default class App extends React.Component {
               placeholder="Tell a story..."
               ref="editor"
               spellCheck={true}
+              readOnly
             />
           </div>
         </div>
-        <input type="text" onChange={this.handleChange.bind(this)} />
+        <hr/>
+        <textarea type="text" onChange={this.handleChange.bind(this)} rows={10} defaultValue={testString} />
+        <button onClick={this.purifyHtml.bind(this)}>Sanitize HTML</button>
         <button onClick={this.importHtml.bind(this)}>Import HTML</button>
       </>
     );

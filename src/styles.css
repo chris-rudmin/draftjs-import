@@ -3,6 +3,8 @@
   text-align: center;
 }
 
+textarea { width: 100%; }
+
 .RichEditor-root {
   background: #fff;
   border: 1px solid #ddd;
