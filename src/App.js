@@ -109,7 +109,7 @@ export default class App extends React.Component {
         <textarea type="text" name="raw" rows={10} value={this.state.textAreaValue} onChange={this.onChangeTextArea.bind(this)}/>
         <button onClick={this.loadSafeHtml.bind(this)}>Load Safe HTML</button>
         <button onClick={this.loadExploitHTML.bind(this)}>Load Exploit HTML</button>
-        <button onClick={this.getPlainText.bind(this)}>Convert to Plain Text</button>
+        <button onClick={this.getPlainText.bind(this)}>Render Plain Text</button>
         <button onClick={this.purifyHtml.bind(this)}>Sanitize HTML</button>
       </>
     );
