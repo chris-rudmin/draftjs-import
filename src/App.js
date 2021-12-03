@@ -28,7 +28,7 @@ const toolbarConfig = {
   ]
 };
 
-const testString = `😃
+const testString = `<p>😃</p>
 <h1>H1</h1>
 <h2>H2</h2>
 <h3>H3</h3>
@@ -43,7 +43,7 @@ const testString = `😃
   <li>two</li>
 </ol>`
 
-const expoitString = `☟ Unsupported HTML ☟
+const expoitString = `<p>☟ Unsupported HTML ☟</p>
 <b>bold</b>
 <i>italic</i>
 <div>div</div>
@@ -79,8 +79,12 @@ export default class App extends React.Component {
     this.renderHTMLString(DOMPurify.sanitize(this.state.textAreaValue, DOMPurifyString))
   }
 
-  reset() {
+  loadSafeHtml() {
     this.setState((state) => ({ rteValue: state.rteValue.setContentFromString(testString, 'html'), textAreaValue: testString }));
+  }
+
+  loadExploitHTML() {
+    this.setState((state) => ({ rteValue: state.rteValue.setContentFromString(expoitString, 'html'), textAreaValue: expoitString }));
   }
 
   onChangeRTE(value) {
@@ -103,7 +107,8 @@ export default class App extends React.Component {
         <hr/>
         <label for="raw">HTML:</label>
         <textarea type="text" name="raw" rows={10} value={this.state.textAreaValue} onChange={this.onChangeTextArea.bind(this)}/>
-        <button onClick={this.reset.bind(this)}>Reset</button>
+        <button onClick={this.loadSafeHtml.bind(this)}>Load Safe HTML</button>
+        <button onClick={this.loadExploitHTML.bind(this)}>Load Exploit HTML</button>
         <button onClick={this.getPlainText.bind(this)}>Convert to Plain Text</button>
         <button onClick={this.purifyHtml.bind(this)}>Sanitize HTML</button>
       </>
