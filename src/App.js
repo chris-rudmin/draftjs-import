@@ -9,15 +9,21 @@ import {
   ContentState
 } from "draft-js";
 import "./styles.css";
-import 'draft-js/dist/Draft.css';
+import 'draft-js/dist/Draft.css'
 import DOMPurify from 'dompurify'
 
+const DOMPurifyConfig = {
+  ALLOWED_TAGS: ['p','a','ol','ul','li','a','br','h1','h2','h3','#text'],
+  ALLOWED_ATTR: ['href'],
+}
+
+const DOMPurifyString = {
+  ALLOWED_TAGS: ['#text'],
+  ALLOWED_ATTR: [],
+}
 
 const testString = `
   <p>😃</p>
-  <p><a href="https://www.thehotline.org/get-help/">National Domestic Violence Hotline</a>: 1-800-799-SAFE (7233); for TTY: 1-800-787-3224</p><p>Text “START” to 88788</p>
-  <p><a href="https://suicidepreventionlifeline.org/talk-to-someone-now/">National Suicide Prevention Lifeline</a>: 1-800-273-8255</p>
-  <p>Nacional de Prevención del Suicidio: 1-888-628-9454</p><p>For TTY Users: Use your preferred relay service or dial 711 then 1-800-273-8255.</p>
   <p><br></p>
   <p>Source materials for this episode cannot be listed here due to character limitations. For a full list of sources, please visit <a href="https://crimejunkiepodcast.com/mysterious-death-ellen-greenberg/">https://crimejunkiepodcast.com/mysterious-death-ellen-greenberg/</a></p>
   <p><br></p>
@@ -32,8 +38,7 @@ const testString = `
   <p>abc<iframe//src=jAva&Tab;script:alert(3)>def</p>
   <math><mi//xlink:href="data:x,<script>alert(4)</script>">
   <TABLE><tr><td>HELLO</tr></TABL>
-  <UL><li><A HREF=//google.com>click</UL>
-`
+  <UL><li><A HREF=//google.com>click</UL>`
 
 
 export default class App extends React.Component {
@@ -93,25 +98,23 @@ export default class App extends React.Component {
   }
 
   purifyHtml() {
-    this.setState((state) => ({
-      ...state, inputValue: DOMPurify.sanitize(state.inputValue)
-    }))
+    this.renderHTMLString(DOMPurify.sanitize(this.state.inputValue, DOMPurifyConfig))
   }
 
   importHtml() {
+    this.renderHTMLString(this.state.inputValue)
+  }
+
+  renderHTMLString(string) {
     const decorator = new CompositeDecorator([
       {
         strategy: findLinkEntities,
         component: Link
-      },
-      {
-        strategy: findImageEntities,
-        component: Image
       }
     ]);
 
 
-    const blocksFromHTML = convertFromHTML(this.state.inputValue);
+    const blocksFromHTML = convertFromHTML(string);
     const blockState = ContentState.createFromBlockArray(
       blocksFromHTML.contentBlocks,
       blocksFromHTML.entityMap
@@ -124,10 +127,7 @@ export default class App extends React.Component {
   }
 
   getPlainText() {
-    this.setState((state) => ({
-      ...state,
-      editorState: state.editorState.getCurrentContent().getPlainText()
-    }))
+    this.renderHTMLString(DOMPurify.sanitize(this.state.inputValue, DOMPurifyString))
   }
 
   render() {
@@ -171,9 +171,9 @@ export default class App extends React.Component {
         </div>
         <hr/>
         <textarea type="text" onChange={this.handleChange.bind(this)} rows={10} defaultValue={testString} />
-        <button onClick={this.purifyHtml.bind(this)}>Sanitize HTML</button>
+        <button onClick={this.getPlainText.bind(this)}>Plain Text</button>
         <button onClick={this.importHtml.bind(this)}>Import HTML</button>
-        <button onClick={this.getPlainText.bind(this)}>Get Plain Text</button>
+        <button onClick={this.purifyHtml.bind(this)}>Sanitize HTML</button>
       </>
     );
   }
@@ -206,24 +206,6 @@ const Link = (props) => {
       {props.children}
     </a>
   );
-};
-
-function findImageEntities(contentBlock, callback, contentState) {
-  contentBlock.findEntityRanges((character) => {
-    const entityKey = character.getEntity();
-    return (
-      entityKey !== null &&
-      contentState.getEntity(entityKey).getType() === "IMAGE"
-    );
-  }, callback);
-}
-
-const Image = (props) => {
-  const { height, src, width } = props.contentState
-    .getEntity(props.entityKey)
-    .getData();
-
-  return <img src={src} height={height} width={width} alt="test" />;
 };
 
 const styles = {
@@ -280,13 +262,8 @@ const BLOCK_TYPES = [
   { label: "H1", style: "header-one" },
   { label: "H2", style: "header-two" },
   { label: "H3", style: "header-three" },
-  { label: "H4", style: "header-four" },
-  { label: "H5", style: "header-five" },
-  { label: "H6", style: "header-six" },
-  { label: "Blockquote", style: "blockquote" },
   { label: "UL", style: "unordered-list-item" },
   { label: "OL", style: "ordered-list-item" },
-  { label: "Code Block", style: "code-block" }
 ];
 
 const BlockStyleControls = (props) => {
@@ -313,10 +290,7 @@ const BlockStyleControls = (props) => {
 };
 
 var INLINE_STYLES = [
-  { label: "Bold", style: "BOLD" },
-  { label: "Italic", style: "ITALIC" },
-  { label: "Underline", style: "UNDERLINE" },
-  { label: "Monospace", style: "CODE" }
+
 ];
 
 const InlineStyleControls = (props) => {
