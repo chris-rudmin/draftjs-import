@@ -5,7 +5,7 @@ import DOMPurify from 'dompurify'
 
 const DOMPurifyConfig = {
   ALLOWED_TAGS: ['p','a','ol','ul','li','a','br','h1','h2','h3','#text'],
-  ALLOWED_ATTR: ['href'],
+  ALLOWED_ATTR: ['href', 'rel', 'target'],
 }
 
 const DOMPurifyString = {
