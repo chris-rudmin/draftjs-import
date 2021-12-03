@@ -33,7 +33,7 @@ const testString = `<p>😃</p>
 <h2>H2</h2>
 <h3>H3</h3>
 <p><br></p>
-<p>Visit <a href="https://podcastchoices.com/adchoices">podcastchoices.com/adchoices</a></p>
+<p>Visit <a target="_blank" rel="noopener noreferrer" href="https://podcastchoices.com/adchoices">podcastchoices.com/adchoices</a></p>
 <ul>
   <li>one</li>
   <li>two</li>
