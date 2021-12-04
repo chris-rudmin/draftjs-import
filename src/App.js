@@ -1,7 +1,6 @@
 import React from 'react';
-import {CompositeDecorator, Editor, EditorState, Modifier, convertFromHTML, ContentState, DefaultDraftBlockRenderMap, getSafeBodyFromHTML} from 'draft-js';
+import {CompositeDecorator, Editor, EditorState, convertFromHTML, ContentState, DefaultDraftBlockRenderMap, getSafeBodyFromHTML} from 'draft-js';
 import {stateToHTML} from 'draft-js-export-html';
-import {stateFromHTML} from 'draft-js-import-html';
 import "./styles.css";
 import DOMPurify from 'dompurify'
 
@@ -70,21 +69,36 @@ const decorator = new CompositeDecorator([
   }
 ])
 
+
 export default class App extends React.Component {
   constructor() {
     super();
 
+    const blockRenderMap = DefaultDraftBlockRenderMap.set('br', { element: 'br' });
+    const blocksFromHTML = convertFromHTML(testString, getSafeBodyFromHTML, blockRenderMap)
+    const state = ContentState.createFromBlockArray(
+      blocksFromHTML.contentBlocks,
+      blocksFromHTML.entityMap,
+    );
+
     this.state = {
-      rteValue: EditorState.createWithContent(stateFromHTML(testString), decorator),
+      rteValue: EditorState.createWithContent(state, decorator),
       textAreaValue: testString,
       readOnly: false,
     };
   }
 
   renderHTMLString(string) {
+    const blockRenderMap = DefaultDraftBlockRenderMap.set('br', { element: 'br' });
+    const blocksFromHTML = convertFromHTML(string, getSafeBodyFromHTML, blockRenderMap)
+    const contentState = ContentState.createFromBlockArray(
+      blocksFromHTML.contentBlocks,
+      blocksFromHTML.entityMap,
+    );
+
     this.setState((state) => ({
       ...state,
-      rteValue: EditorState.createWithContent(stateFromHTML(string), decorator),
+      rteValue: EditorState.createWithContent(contentState, decorator),
       textAreaValue: string
     }))
   }
