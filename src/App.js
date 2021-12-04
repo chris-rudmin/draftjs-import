@@ -1,7 +1,31 @@
 import React from 'react';
-import RichTextEditor from 'react-rte';
+import {CompositeDecorator, Editor, EditorState, Modifier, convertFromHTML, ContentState, DefaultDraftBlockRenderMap, getSafeBodyFromHTML} from 'draft-js';
+import {stateToHTML} from 'draft-js-export-html';
+import {stateFromHTML} from 'draft-js-import-html';
 import "./styles.css";
 import DOMPurify from 'dompurify'
+
+const Link = ({ entityKey, contentState, children }) => {
+  let { url } = contentState.getEntity(entityKey).getData();
+  return (
+    <a
+      rel="noopener noreferrer"
+      href={url}
+      target="_blank"
+    >
+      {children}
+    </a>
+  )
+};
+
+const findLinkEntities = (contentBlock, callback, contentState) => {
+  contentBlock.findEntityRanges((character) => {
+    const entityKey = character.getEntity()
+    return (
+      entityKey !== null && contentState.getEntity(entityKey).getType() === "LINK"
+    )
+  }, callback);
+};
 
 const DOMPurifyConfig = {
   ALLOWED_TAGS: ['p','a','ol','ul','li','a','br','h1','h2','h3','#text'],
@@ -12,21 +36,6 @@ const DOMPurifyString = {
   ALLOWED_TAGS: ['#text'],
   ALLOWED_ATTR: [],
 }
-
-const toolbarConfig = {
-  // Optionally specify the groups to display (displayed in the order listed).
-  display: ['BLOCK_TYPE_BUTTONS', 'LINK_BUTTONS', 'BLOCK_TYPE_DROPDOWN', 'HISTORY_BUTTONS'],
-  BLOCK_TYPE_DROPDOWN: [
-    {label: 'Normal', style: 'unstyled'},
-    {label: 'Heading Large', style: 'header-one'},
-    {label: 'Heading Medium', style: 'header-two'},
-    {label: 'Heading Small', style: 'header-three'}
-  ],
-  BLOCK_TYPE_BUTTONS: [
-    {label: 'UL', style: 'unordered-list-item'},
-    {label: 'OL', style: 'ordered-list-item'}
-  ]
-};
 
 const testString = `<p>😃</p>
 <h1>H1</h1>
@@ -54,19 +63,28 @@ const expoitString = `<p>☟ Unsupported HTML ☟</p>
 <TABLE><tr><td>HELLO</tr></TABL>
 <UL><li><A HREF=//google.com>click</UL>`
 
+const decorator = new CompositeDecorator([
+  {
+    strategy: findLinkEntities,
+    component: Link,
+  }
+])
 
 export default class App extends React.Component {
   constructor() {
     super();
+
     this.state = {
-      rteValue: RichTextEditor.createEmptyValue().setContentFromString(expoitString, 'html'),
-      textAreaValue: expoitString,
+      rteValue: EditorState.createWithContent(stateFromHTML(testString), decorator),
+      textAreaValue: testString,
+      readOnly: false,
     };
   }
 
   renderHTMLString(string) {
     this.setState((state) => ({
-      rteValue: state.rteValue.setContentFromString(string, 'html'),
+      ...state,
+      rteValue: EditorState.createWithContent(stateFromHTML(string), decorator),
       textAreaValue: string
     }))
   }
@@ -80,29 +98,40 @@ export default class App extends React.Component {
   }
 
   loadSafeHtml() {
-    this.setState((state) => ({ rteValue: state.rteValue.setContentFromString(testString, 'html'), textAreaValue: testString }));
+    this.renderHTMLString(testString)
   }
 
   loadExploitHTML() {
-    this.setState((state) => ({ rteValue: state.rteValue.setContentFromString(expoitString, 'html'), textAreaValue: expoitString }));
+    this.renderHTMLString(expoitString)
   }
 
   onChangeRTE(value) {
-    this.setState((state) => ({ rteValue: value, textAreaValue: state.rteValue.toString('html')}))
+    this.setState((state) => ({
+      ...state,
+      rteValue: value,
+      textAreaValue: stateToHTML(value.getCurrentContent())
+    }))
   }
 
   onChangeTextArea(event) {
-    this.setState((state) => ({ rteValue: state.rteValue.setContentFromString(event.target.value, 'html'), textAreaValue: event.target.value}))
+    this.renderHTMLString(event.target.value)
+  }
+
+  toggleReadOnly(){
+    this.setState((state) => ({
+      ...state,
+      readOnly: !state.readOnly
+    }))
   }
 
   render() {
     return (
       <>
-        <RichTextEditor
-          value={this.state.rteValue}
+        <Editor
+          editorState={this.state.rteValue}
           placeholder="Podcast description"
-          toolbarConfig={toolbarConfig}
           onChange={this.onChangeRTE.bind(this)}
+          readOnly={this.state.readOnly}
         />
         <hr/>
         <label for="raw">HTML:</label>
@@ -111,6 +140,7 @@ export default class App extends React.Component {
         <button onClick={this.loadExploitHTML.bind(this)}>Load Exploit HTML</button>
         <button onClick={this.getPlainText.bind(this)}>Render Plain Text</button>
         <button onClick={this.purifyHtml.bind(this)}>Sanitize HTML</button>
+        <button onClick={this.toggleReadOnly.bind(this)}>Toggle readOnly</button>
       </>
     );
   }
