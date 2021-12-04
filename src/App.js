@@ -1,6 +1,7 @@
 import React from 'react';
 import {CompositeDecorator, Editor, EditorState, Modifier, convertFromHTML, ContentState, DefaultDraftBlockRenderMap, getSafeBodyFromHTML} from 'draft-js';
 import {stateToHTML} from 'draft-js-export-html';
+import {stateFromHTML} from 'draft-js-import-html';
 import "./styles.css";
 import DOMPurify from 'dompurify'
 
@@ -25,30 +26,6 @@ const findLinkEntities = (contentBlock, callback, contentState) => {
     )
   }, callback);
 };
-
-// const onAddLink = (editorState, setEditorState) => {
-//   const decorator = createLinkDecorator();
-//   if (linkUrl) {
-//     let displayLink = window.prompt("Display Text");
-//     if (displayLink) {
-//       const currentContent = editorState.getCurrentContent();
-//       const createEntity = currentContent.createEntity("LINK", "MUTABLE", {
-//         url: linkUrl,
-//       });
-//       let entityKey = currentContent.getLastCreatedEntityKey();
-//       const selection = editorState.getSelection();
-//       const textWithEntity = Modifier.insertText(
-//         currentContent,
-//         selection,
-//         displayLink,
-//         null,
-//         entityKey
-//       );
-//       let newState = EditorState.createWithContent(textWithEntity, decorator);
-//       setEditorState(newState);
-//     }
-//   }
-// };
 
 const DOMPurifyConfig = {
   ALLOWED_TAGS: ['p','a','ol','ul','li','a','br','h1','h2','h3','#text'],
@@ -93,33 +70,21 @@ const decorator = new CompositeDecorator([
   }
 ])
 
-
 export default class App extends React.Component {
   constructor() {
     super();
 
-    const blockRenderMap = DefaultDraftBlockRenderMap.set('p', { element: 'p' });
-    const blocksFromHTML = convertFromHTML(testString, getSafeBodyFromHTML, blockRenderMap)
-    const state = ContentState.createFromBlockArray(
-      blocksFromHTML.contentBlocks.map(block => block.get('type') === 'p' ? block.set('type', 'unstyled') : block),
-      blocksFromHTML.entityMap,
-    );
-
     this.state = {
-      rteValue: EditorState.createWithContent(state, decorator),
+      rteValue: EditorState.createWithContent(stateFromHTML(testString), decorator),
       textAreaValue: testString,
+      readOnly: false,
     };
   }
 
   renderHTMLString(string) {
-    const blocksFromHTML = convertFromHTML(string);
-    const contentState = ContentState.createFromBlockArray(
-      blocksFromHTML.contentBlocks,
-      blocksFromHTML.entityMap,
-    );
-
     this.setState((state) => ({
-      rteValue: EditorState.createWithContent(contentState, decorator),
+      ...state,
+      rteValue: EditorState.createWithContent(stateFromHTML(string), decorator),
       textAreaValue: string
     }))
   }
@@ -142,6 +107,7 @@ export default class App extends React.Component {
 
   onChangeRTE(value) {
     this.setState((state) => ({
+      ...state,
       rteValue: value,
       textAreaValue: stateToHTML(value.getCurrentContent())
     }))
@@ -151,6 +117,13 @@ export default class App extends React.Component {
     this.renderHTMLString(event.target.value)
   }
 
+  toggleReadOnly(){
+    this.setState((state) => ({
+      ...state,
+      readOnly: !state.readOnly
+    }))
+  }
+
   render() {
     return (
       <>
@@ -158,6 +131,7 @@ export default class App extends React.Component {
           editorState={this.state.rteValue}
           placeholder="Podcast description"
           onChange={this.onChangeRTE.bind(this)}
+          readOnly={this.state.readOnly}
         />
         <hr/>
         <label for="raw">HTML:</label>
@@ -166,6 +140,7 @@ export default class App extends React.Component {
         <button onClick={this.loadExploitHTML.bind(this)}>Load Exploit HTML</button>
         <button onClick={this.getPlainText.bind(this)}>Render Plain Text</button>
         <button onClick={this.purifyHtml.bind(this)}>Sanitize HTML</button>
+        <button onClick={this.toggleReadOnly.bind(this)}>Toggle readOnly</button>
       </>
     );
   }
